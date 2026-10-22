@@ -1,0 +1,456 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f5bea">
+<script>try{var t=localStorage.getItem("loanTracker.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<title>Loan Tracker</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1c2333;--mut:#667;--pri:#2f5bea;--ok:#12a150;--bad:#d93025;--line:#e3e7f0;--link:#2f5bea}
+:root{color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#171e2e;--ink:#e8ecf5;--mut:#9aa5bd;--line:#26304a;--link:#8fa8ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1420;--card:#171e2e;--ink:#e8ecf5;--mut:#9aa5bd;--line:#26304a;--link:#8fa8ff;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#2f5bea,#6a3df0);color:#fff;padding:calc(24px + env(safe-area-inset-top)) 20px 50px}
+header h1{margin:0}header p{margin:4px 0 0;opacity:.85}
+main{max-width:900px;margin:auto;padding:0 14px calc(40px + env(safe-area-inset-bottom))}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:-30px}
+.card{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 2px 8px #0002}
+.card span{display:block;color:var(--mut);font-size:.75rem}.card b{font-size:1.1rem}
+.card.warn b{color:var(--bad)}
+.panel{background:var(--card);border-radius:12px;padding:16px;margin-top:16px;box-shadow:0 2px 8px #0001}
+h2{margin:0 0 12px;font-size:1.05rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--mut);margin-bottom:10px}
+button{padding:10px 14px;border:0;border-radius:8px;background:var(--pri);color:#fff;cursor:pointer;font:inherit;touch-action:manipulation}
+button.sm{padding:7px 10px;font-size:.8rem}
+button.ok{background:var(--ok)}button.bad{background:var(--bad)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.bar h2{margin:0}.bar input{max-width:220px}
+.person{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.top small{color:var(--mut)}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0;font-size:.85rem}
+.nums span{display:block;color:var(--mut);font-size:.72rem}
+.nums .bal b{color:var(--bad)}.nums .bal.zero b{color:var(--ok)}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.hist{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;font-size:.85rem}
+.hist div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0}
+.hist .l{color:var(--bad)}.hist .p{color:var(--ok)}
+.hist .x{background:none;color:var(--mut);padding:2px 6px}
+.msg{background:var(--bad);color:#fff;padding:10px 14px;border-radius:8px;margin-top:12px}
+.empty{color:var(--mut);text-align:center;padding:20px}
+.foot{display:flex;gap:8px;flex-wrap:wrap}
+dialog{border:0;border-radius:14px;padding:18px;width:min(92vw,360px);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:#0008}
+.calc{background:var(--bg);border-radius:8px;padding:10px;font-size:.88rem;margin-bottom:12px;line-height:1.6}
+.row{display:flex;gap:8px;justify-content:flex-end}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.lockbtn{background:#fff3;color:#fff;padding:8px 12px;font-size:.85rem}
+.locked header,.locked main{display:none}
+#lock{position:fixed;inset:0;background:linear-gradient(135deg,#2f5bea,#6a3df0);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+#lock[hidden]{display:none}
+.lockbox{background:var(--card);border-radius:16px;padding:24px;width:min(92vw,340px);display:flex;flex-direction:column;gap:10px;text-align:center}
+.lockbox .ico{font-size:2.4rem}.lockbox h2{margin:0}.lockbox p{margin:0;color:var(--mut);font-size:.85rem}
+.lockbox a{color:var(--mut);font-size:.8rem;cursor:pointer;text-decoration:underline}
+.lockbox .msg{margin:0;font-size:.85rem}
+header>div{flex:1}
+.menubtn{background:#fff3;color:#fff;padding:8px 12px;font-size:1.1rem;line-height:1}
+#scrim{position:fixed;inset:0;background:#0007;z-index:30}
+#scrim[hidden]{display:none}
+#drawer{position:fixed;top:0;bottom:0;left:0;width:min(78vw,280px);background:var(--card);z-index:40;transform:translateX(-105%);transition:transform .2s;padding:calc(16px + env(safe-area-inset-top)) 14px 16px;display:flex;flex-direction:column;gap:4px;box-shadow:4px 0 20px #0004;visibility:hidden}
+#drawer.open{transform:none;visibility:visible}
+.dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ditem{background:transparent;color:var(--ink);text-align:left;padding:12px;border-radius:10px;width:100%}
+.ditem.cur{background:var(--bg);font-weight:600}
+.dsep{height:1px;background:var(--line);margin:6px 0}
+.locked #drawer,.locked #scrim{display:none}
+#v-settings>.panel:first-child,#v-contact>.panel:first-child{margin-top:-30px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;background:transparent;color:var(--ink);border:1px solid var(--line)}
+.seg button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.hint{color:var(--mut);font-size:.82rem;margin:0 0 10px}
+.contact{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;margin-top:10px}
+.contact span{color:var(--mut);font-size:.8rem}
+.contact b{color:var(--link);font-size:.92rem;font-weight:600;overflow-wrap:anywhere}
+header h1{font-size:1.4rem}
+header p{font-size:.85rem}
+</style>
+</head>
+<body>
+<header><button type="button" class="menubtn" id="menuBtn" aria-label="Menu">☰</button><div><h1>💼 Loan Tracker</h1><p>Record, track and repay loans</p></div><button type="button" class="lockbtn" id="lockNow">🔒 Lock</button></header>
+<main>
+  <div id="msg" class="msg" hidden></div>
+  <div id="v-home" class="view">
+  <section class="stats">
+    <div class="card"><span>Total Lent</span><b id="sLent">0</b></div>
+    <div class="card"><span>Repaid</span><b id="sPaid">0</b></div>
+    <div class="card warn"><span>Balance</span><b id="sOut">0</b></div>
+  </section>
+
+  <section class="panel">
+    <h2>Register a new borrower</h2>
+    <div class="grid">
+      <input id="bName" placeholder="Borrower name">
+      <input id="bPhone" placeholder="Phone (optional)">
+      <input id="bAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Loan amount (optional)">
+      <input id="bNote" placeholder="Note (optional)">
+      <button type="button" id="addBorrower">Register</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="bar"><h2>Borrowers</h2><input id="search" placeholder="Search..."></div>
+    <div id="list"></div>
+  </section>
+
+  </div>
+
+  <div id="v-settings" class="view" hidden>
+    <section class="panel">
+      <h2>Appearance</h2>
+      <p class="hint">Dark mode</p>
+      <div class="seg" id="themeSeg">
+        <button type="button" data-theme-btn="system">System</button>
+        <button type="button" data-theme-btn="light">Light</button>
+        <button type="button" data-theme-btn="dark">Dark</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Security</h2>
+      <p class="hint">Change the password used to unlock the app.</p>
+      <button type="button" class="ghost sm" id="changePw">🔑 Change password</button>
+    </section>
+    <section class="panel">
+      <h2>Backup</h2>
+      <div class="foot">
+        <button type="button" class="ghost sm" id="exportBtn">⬇ Export backup</button>
+        <button type="button" class="ghost sm" id="importBtn">⬆ Import backup</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+      </div>
+      <p class="hint" style="margin:10px 0 0">Your data is stored on this device only. Export a backup regularly so you don't lose it if browser or app data is cleared.</p>
+    </section>
+  </div>
+
+  <div id="v-contact" class="view" hidden>
+    <section class="panel">
+      <h2>Contact</h2>
+      <p class="hint">Questions or feedback? Get in touch.</p>
+      <a class="contact" href="tel:+251970646505"><span>📞 Phone</span><b>+251970646505</b></a>
+      <a class="contact" href="mailto:nuuraddiinahmad35@gmail.com"><span>✉️ Email</span><b>nuuraddiinahmad35@gmail.com</b></a>
+      <p class="hint" style="margin:14px 0 0">Loan Tracker v1.0</p>
+    </section>
+  </div>
+</main>
+
+<div id="scrim" hidden></div>
+<nav id="drawer" aria-label="Menu">
+  <div class="dhead"><b>💼 Loan Tracker</b><button type="button" class="ghost sm" id="closeMenu" aria-label="Close menu">✕</button></div>
+  <button type="button" class="ditem cur" data-go="home">🏠 Home</button>
+  <button type="button" class="ditem" data-go="settings">⚙️ Settings</button>
+  <button type="button" class="ditem" data-go="contact">✉️ Contact</button>
+  <div class="dsep"></div>
+  <button type="button" class="ditem" id="menuTheme">🌙 Dark mode</button>
+  <button type="button" class="ditem" id="menuLock">🔒 Lock app</button>
+</nav>
+
+<div id="lock" hidden>
+  <div class="lockbox">
+    <div class="ico">🔒</div>
+    <h2 id="lTitle"></h2>
+    <p id="lHint"></p>
+    <input id="lOld" type="password" placeholder="Current password" autocomplete="current-password">
+    <input id="lPw" type="password" autocomplete="current-password">
+    <input id="lPw2" type="password" placeholder="Repeat password" autocomplete="new-password">
+    <div id="lErr" class="msg" hidden></div>
+    <button type="button" id="lOk">Unlock</button>
+    <button type="button" class="ghost" id="lCancel">Cancel</button>
+    <a id="lForgot">Forgot password</a>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <h3 id="dTitle" style="margin-top:0"></h3>
+  <label>Amount<input id="dAmount" type="number" inputmode="decimal" step="0.01" min="0"></label>
+  <label>Date<input id="dDate" type="date"></label>
+  <label>Note<input id="dNote" placeholder="optional"></label>
+  <div id="calc" class="calc"></div>
+  <div class="row">
+    <button type="button" class="ghost" id="dCancel">Cancel</button>
+    <button type="button" id="dSave">Save</button>
+  </div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => Number(n).toLocaleString(undefined, {maximumFractionDigits: 2});
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ---------- Storage (localStorage; falls back to memory) ---------- */
+const KEY = "loanTracker.v1";
+let memoryOnly = false, data = [];
+function loadData() {
+  try { data = JSON.parse(localStorage.getItem(KEY) || "[]"); }
+  catch { memoryOnly = true; data = []; showMsg("Storage is unavailable. Data may be lost when you close the page. Export a backup."); }
+}
+function save() {
+  if (memoryOnly) return;
+  try { localStorage.setItem(KEY, JSON.stringify(data)); }
+  catch { memoryOnly = true; showMsg("Could not save. Export a backup."); }
+}
+
+/* ---------- Calculations ---------- */
+const sum = (b, t) => b.tx.filter(x => x.type === t).reduce((a, x) => a + x.amount, 0);
+const loanOf = b => sum(b, "loan"), paidOf = b => sum(b, "payment");
+const balOf = b => Math.round((loanOf(b) - paidOf(b)) * 100) / 100;
+
+let open = new Set(), cur = null;
+let msgTimer;
+function showMsg(t) {
+  const m = $("#msg"); m.textContent = t; m.hidden = !t;
+  clearTimeout(msgTimer); if (t) msgTimer = setTimeout(() => (m.hidden = true), 6000);
+}
+
+function render() {
+  const q = $("#search").value.toLowerCase();
+  const list = data.filter(b => b.name.toLowerCase().includes(q))
+                   .sort((a, b) => a.name.localeCompare(b.name));
+  $("#list").innerHTML = list.map(b => {
+    const bal = balOf(b);
+    const tx = [...b.tx].sort((x, y) => y.day.localeCompare(x.day) || y.id.localeCompare(x.id));
+    return `<div class="person">
+      <div class="top"><div><b>${esc(b.name)}</b><br><small>${esc(b.phone)}</small></div>
+        <div class="btns">
+          <button class="sm" onclick="openDlg('${b.id}','loan')">+ Loan</button>
+          <button class="sm ok" onclick="openDlg('${b.id}','payment')">+ Payment</button>
+          <button class="sm ghost" onclick="toggle('${b.id}')">History</button>
+          <button class="sm bad" onclick="delB('${b.id}')">✕</button>
+        </div></div>
+      <div class="nums">
+        <div><span>Total loan</span><b>${fmt(loanOf(b))}</b></div>
+        <div><span>Repaid</span><b>${fmt(paidOf(b))}</b></div>
+        <div class="bal ${bal <= 0 ? "zero" : ""}"><span>Balance</span><b>${fmt(bal)}</b></div>
+      </div>
+      ${open.has(b.id) ? `<div class="hist">${tx.map(t => `
+        <div><span>${esc(t.day)} · <span class="${t.type === "loan" ? "l" : "p"}">${t.type === "loan" ? "Loan +" : "Payment −"}${fmt(t.amount)}</span> ${esc(t.note)}</span>
+        <button class="x" onclick="delT('${b.id}','${t.id}')">✕</button></div>`).join("") || "<div>No history</div>"}</div>` : ""}
+    </div>`;
+  }).join("") || `<div class="empty">No borrowers yet.</div>`;
+
+  const lent = data.reduce((a, b) => a + loanOf(b), 0), paid = data.reduce((a, b) => a + paidOf(b), 0);
+  $("#sLent").textContent = fmt(lent);
+  $("#sPaid").textContent = fmt(paid);
+  $("#sOut").textContent = fmt(lent - paid);
+}
+
+const toggle = id => { open.has(id) ? open.delete(id) : open.add(id); render(); };
+
+$("#addBorrower").onclick = () => {
+  const name = $("#bName").value.trim();
+  if (!name) return showMsg("Enter the borrower's name");
+  const b = {id: uid(), name, phone: $("#bPhone").value.trim(), tx: []};
+  const amt = parseFloat($("#bAmount").value);
+  if (amt > 0) b.tx.push({id: uid(), type: "loan", amount: amt, day: today(), note: $("#bNote").value.trim()});
+  data.push(b); save();
+  ["#bName", "#bPhone", "#bAmount", "#bNote"].forEach(s => ($(s).value = ""));
+  showMsg(""); render();
+};
+
+function openDlg(id, type) {
+  cur = {id, type, b: data.find(x => x.id === id)};
+  $("#dTitle").textContent = `${cur.b.name} · ${type === "loan" ? "Additional loan" : "Payment"}`;
+  $("#dAmount").value = ""; $("#dNote").value = ""; $("#dDate").value = today();
+  calc(); $("#dlg").showModal();
+}
+function calc() {
+  const a = parseFloat($("#dAmount").value) || 0, b = cur.b;
+  const nl = loanOf(b) + (cur.type === "loan" ? a : 0);
+  const np = paidOf(b) + (cur.type === "payment" ? a : 0);
+  $("#calc").innerHTML = `Current balance: <b>${fmt(balOf(b))}</b><br>
+    ${cur.type === "loan" ? "Loan added" : "Paid"}: <b>${fmt(a)}</b><br>
+    New balance: <b>${fmt(nl - np)}</b>`;
+}
+$("#dAmount").oninput = calc;
+$("#dCancel").onclick = () => $("#dlg").close();
+$("#dSave").onclick = () => {
+  const a = parseFloat($("#dAmount").value);
+  if (!(a > 0)) return alert("Enter a valid amount");
+  const bal = balOf(cur.b);
+  if (cur.type === "payment" && a > bal + 1e-9) return alert(`Payment cannot exceed the remaining balance (${fmt(bal)})`);
+  cur.b.tx.push({id: uid(), type: cur.type, amount: a, day: $("#dDate").value || today(), note: $("#dNote").value.trim()});
+  save(); open.add(cur.id); $("#dlg").close(); render();
+};
+
+function delT(bid, tid) {
+  if (!confirm("Delete this entry?")) return;
+  const b = data.find(x => x.id === bid); b.tx = b.tx.filter(t => t.id !== tid); save(); render();
+}
+function delB(id) {
+  if (!confirm("Delete this borrower and all their history?")) return;
+  data = data.filter(b => b.id !== id); save(); render();
+}
+$("#search").oninput = render;
+
+/* ---------- Backup ---------- */
+$("#exportBtn").onclick = async () => {
+  const text = JSON.stringify({app: "loanTracker", version: 1, data}, null, 2);
+  const name = `loan-backup-${today()}.json`;
+  try {
+    const file = new File([text], name, {type: "application/json"});
+    if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: name}); return; }
+  } catch (e) { if (e.name === "AbortError") return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], {type: "application/json"}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+};
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    const arr = Array.isArray(j) ? j : j.data;
+    if (!Array.isArray(arr) || !arr.every(b => b && b.name && Array.isArray(b.tx))) throw 0;
+    if (!confirm("Replace current data? (Backup contains " + arr.length + " borrowers)")) return;
+    data = arr; save(); render(); showMsg("");
+  } catch { showMsg("This file is not a valid backup."); }
+};
+
+
+/* ---------- Password ---------- */
+const PWKEY = "loanTracker.pw";
+const getPw = () => { try { return JSON.parse(localStorage.getItem(PWKEY)); } catch { return null; } };
+const setPw = o => { try { localStorage.setItem(PWKEY, JSON.stringify(o)); } catch {} };
+const hex = u => [...new Uint8Array(u)].map(x => x.toString(16).padStart(2, "0")).join("");
+function randSalt() {
+  const a = new Uint8Array(16);
+  try { crypto.getRandomValues(a); } catch { for (let i = 0; i < 16; i++) a[i] = Math.random() * 256; }
+  return hex(a);
+}
+async function hashPw(pw, saltHex) {
+  try {
+    const salt = Uint8Array.from(saltHex.match(/../g).map(h => parseInt(h, 16)));
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+    return "p" + hex(await crypto.subtle.deriveBits({name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256"}, key, 256));
+  } catch {                       // crypto.subtle unavailable (fallback)
+    let h1 = 5381, h2 = 52711;
+    for (const c of saltHex + pw) { const n = c.charCodeAt(0); h1 = (h1 * 33) ^ n; h2 = (h2 * 31) ^ n; }
+    return "f" + (h1 >>> 0).toString(16) + (h2 >>> 0).toString(16);
+  }
+}
+async function makeRecord(pw) { const salt = randSalt(); return {salt, hash: await hashPw(pw, salt)}; }
+async function checkPw(pw) { const r = getPw(); return !!r && (await hashPw(pw, r.salt)) === r.hash; }
+
+let lockMode = "unlock", fails = 0, hiddenAt = 0;
+function lockErr(t) { const e = $("#lErr"); e.textContent = t; e.hidden = !t; }
+
+function showLock(mode) {
+  lockMode = mode;
+  closeMenu();
+  if ($("#dlg").open) $("#dlg").close();
+  document.body.classList.add("locked");
+  $("#list").innerHTML = "";
+  ["#lOld", "#lPw", "#lPw2"].forEach(s => ($(s).value = ""));
+  lockErr("");
+  const set = mode === "setup", chg = mode === "change";
+  $("#lOld").hidden = !chg;
+  $("#lPw2").hidden = mode === "unlock";
+  $("#lCancel").hidden = !chg;
+  $("#lForgot").hidden = set;
+  $("#lTitle").textContent = set ? "Create a password" : chg ? "Change password" : "Enter password";
+  $("#lHint").textContent = set
+    ? "Choose a password (at least 4 characters). If you forget it, data cannot be recovered, so export backups regularly."
+    : chg ? "Enter your current and new password." : "Enter your password to view your data.";
+  $("#lPw").placeholder = set || chg ? "New password" : "Password";
+  $("#lPw").autocomplete = set || chg ? "new-password" : "current-password";
+  $("#lOk").textContent = set ? "Save password" : chg ? "Change" : "Unlock";
+  $("#lock").hidden = false;
+  setTimeout(() => $(chg ? "#lOld" : "#lPw").focus(), 50);
+}
+
+function unlockUI() {
+  document.body.classList.remove("locked");
+  $("#lock").hidden = true;
+  ["#lOld", "#lPw", "#lPw2"].forEach(s => ($(s).value = ""));
+  fails = 0; render();
+}
+
+$("#lOk").onclick = async () => {
+  const pw = $("#lPw").value;
+  if (lockMode === "unlock") {
+    if (fails >= 5) return;
+    if (await checkPw(pw)) return unlockUI();
+    fails++;
+    lockErr("Incorrect password.");
+    if (fails >= 5) {
+      $("#lOk").disabled = true; lockErr("Too many attempts. Wait 15 seconds.");
+      setTimeout(() => { fails = 0; $("#lOk").disabled = false; lockErr(""); }, 15000);
+    }
+    return;
+  }
+  if (lockMode === "change" && !(await checkPw($("#lOld").value))) return lockErr("Current password is incorrect.");
+  if (pw.length < 4) return lockErr("Password must be at least 4 characters.");
+  if (pw !== $("#lPw2").value) return lockErr("Passwords do not match.");
+  setPw(await makeRecord(pw));
+  unlockUI();
+  if (lockMode === "change") showMsg("Password changed.");
+};
+["#lOld", "#lPw", "#lPw2"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") $("#lOk").click(); }));
+$("#lCancel").onclick = unlockUI;
+$("#lForgot").onclick = () => {
+  if (!confirm("Resetting requires deleting all data. If you have a backup, you can restore it afterwards.\n\nDelete all data?")) return;
+  if (!confirm("Confirm: ALL data will be deleted. Continue?")) return;
+  try { localStorage.removeItem(KEY); localStorage.removeItem(PWKEY); } catch {}
+  data = []; showLock("setup");
+};
+$("#lockNow").onclick = () => showLock("unlock");
+$("#changePw").onclick = () => showLock("change");
+
+// auto-lock if the app was in the background for more than 30 seconds
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) hiddenAt = Date.now();
+  else if (hiddenAt && Date.now() - hiddenAt > 30000 && getPw() && !document.body.classList.contains("locked")) showLock("unlock");
+});
+
+/* ---------- Menu & views ---------- */
+function openMenu() { $("#drawer").classList.add("open"); $("#scrim").hidden = false; }
+function closeMenu() { $("#drawer").classList.remove("open"); $("#scrim").hidden = true; }
+function go(v) {
+  for (const x of ["home", "settings", "contact"]) $("#v-" + x).hidden = x !== v;
+  document.querySelectorAll("[data-go]").forEach(b => b.classList.toggle("cur", b.dataset.go === v));
+  closeMenu(); window.scrollTo(0, 0); if (v === "home") render();
+}
+$("#menuBtn").onclick = openMenu;
+$("#scrim").onclick = closeMenu;
+$("#closeMenu").onclick = closeMenu;
+document.querySelectorAll("[data-go]").forEach(b => (b.onclick = () => go(b.dataset.go)));
+$("#menuLock").onclick = () => showLock("unlock");
+
+/* ---------- Theme (system / light / dark) ---------- */
+const THEMEKEY = "loanTracker.theme";
+let theme = "system";
+try { theme = localStorage.getItem(THEMEKEY) || "system"; } catch {}
+const isDark = () => theme === "dark" || (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+function applyTheme() {
+  const r = document.documentElement;
+  if (theme === "light" || theme === "dark") r.dataset.theme = theme; else delete r.dataset.theme;
+  document.querySelectorAll("[data-theme-btn]").forEach(b => b.classList.toggle("on", b.dataset.themeBtn === theme));
+  $("#menuTheme").textContent = isDark() ? "☀️ Light mode" : "🌙 Dark mode";
+}
+function setTheme(t) { theme = t; try { localStorage.setItem(THEMEKEY, t); } catch {} applyTheme(); }
+document.querySelectorAll("[data-theme-btn]").forEach(b => (b.onclick = () => setTheme(b.dataset.themeBtn)));
+$("#menuTheme").onclick = () => setTheme(isDark() ? "light" : "dark");
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme); } catch {}
+applyTheme();
+
+loadData();
+showLock(getPw() ? "unlock" : "setup");
+
+</script>
+</body>
+</html>
